@@ -1,4 +1,4 @@
-# 你好请吃我的番剧安利-番剧收集器
+# 你好请吃我的番剧安利-番剧收集器-Anime-pick-grid
 [![在线演示](https://img.shields.io/badge/在线演示-点击体验-blue)](http://acg-anime.morlvoid.pro)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![HTML](https://img.shields.io/badge/语言-HTML/CSS/JS-orange)
@@ -7,7 +7,7 @@
 
 ## 项目简介
 
-你好请吃我的番剧安利-番剧收集器是一个基于网页的番剧推荐表生成工具，用户可以通过搜索和选择番剧，创建自己的番剧推荐九宫格或更多格子的推荐表。
+你好请吃我的番剧安利-番剧收集器（Anime-pick-grid）是一个基于网页的番剧推荐表生成工具，用户可以通过搜索和选择番剧，创建自己的番剧推荐九宫格或更多格子的推荐表。
 
 <img width="800" height="600" alt="番剧安利" src="https://github.com/user-attachments/assets/f57ac085-c890-4c36-b5a3-43f7ff356ccf" />
 
@@ -64,4 +64,5 @@ MIT License
 
 ## 贡献
 欢迎提交 Issue 或 Pull Request。如果你想添加新功能或修复 bug，请先开 Issue 讨论。
+
 
