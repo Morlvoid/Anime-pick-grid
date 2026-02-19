@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>你好请吃我的番剧安利</title>
+    <style>
+         :root {
+            --primary-color: #3f51b5;
+            --bg-color: #f5f5f5;
+            --card-bg: #ffffff;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .header-section {
+            text-align: center;
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 900px;
+        }
+        
+        #main-title-input {
+            font-size: 24px;
+            padding: 10px;
+            margin: 10px 0;
+            width: 80%;
+            border: none;
+            border-radius: 8px;
+            text-align: center;
+            outline: none;
+            background: transparent;
+        }
+        /* 九宫格容器 */
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+        }
+        /* 卡片样式 */
+        
+        .card {
+            position: relative;
+            background: var(--card-bg);
+            aspect-ratio: 2 / 3;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: visible;
+            /* 允许下拉框溢出 */
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+        }
+        /* 删除按钮样式 */
+        
+        .delete-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 24px;
+            height: 24px;
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.2s;
+            z-index: 10;
+        }
+        
+        .card:hover .delete-btn {
+            opacity: 1;
+        }
+        
+        .delete-btn:hover {
+            transform: scale(1.1);
+            background-color: #ff3742;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        /* 拖拽排序样式 */
+        
+        .card.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card.drag-over {
+            border: 2px dashed var(--primary-color);
+        }
+        
+        .card-image {
+            flex: 1;
+            background-color: #eee;
+            background-size: cover;
+            background-position: center;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 40px;
+        }
+        
+        .card-title {
+            padding: 12px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            background: white;
+            border-radius: 0 0 12px 12px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-top: 1px solid #eee;
+        }
+        /* 搜索下拉框 */
+        
+        .search-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            z-index: 1000;
+            margin-top: 5px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            display: none;
+        }
+        /* 确保卡片容器不会影响搜索框的层级 */
+        
+        .card {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .search-container.active {
+            display: block;
+        }
+        
+        .search-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .results-list {
+            max-height: 160px;
+            overflow-y: auto;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .result-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .result-item:hover {
+            background: #f0f4ff;
+        }
+        
+        .result-item img {
+            width: 40px;
+            height: 56px;
+            object-fit: cover;
+            margin-right: 10px;
+            border-radius: 4px;
+        }
+        
+        .result-item span {
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .loading-text {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            padding: 10px;
+        }
+        /* 响应式 */
+        
+        @media (max-width: 600px) {
+            .grid-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            /* 移动端4x3布局调整 */
+            .grid-container[style*="repeat(4, 1fr)"] {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px !important;
+            }
+            /* 移动端5x2布局调整 */
+            .grid-container[style*="repeat(5, 1fr)"] {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px !important;
+            }
+        }
+        /* 小屏幕调整 */
+        
+        @media (max-width: 400px) {
+            /* 小屏幕4x3布局调整 */
+            .grid-container[style*="repeat(4, 1fr)"] {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px !important;
+            }
+            /* 小屏幕5x2布局调整 */
+            .grid-container[style*="repeat(5, 1fr)"] {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px !important;
+            }
+        }
+        /* 添加番剧按钮 */
+        
+        .add-anime-section {
+            margin: 80px 0;
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+        }
+        
+        .add-anime-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        
+        .add-anime-btn:hover {
+            background-color: #303f9f;
+            transform: translateY(-2px);
+        }
+        
+        .add-anime-btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header-section">
+        <input type="text" id="main-title-input" placeholder="点击输入标题" />
+    </div>
+
+    <div class="grid-container" id="anime-grid">
+        <!-- JS 动态生成 9 个卡片 -->
+    </div>
+
+    <div class="add-anime-section">
+        <button class="add-anime-btn" id="add-anime-btn">添加番剧</button>
+        <button class="add-anime-btn" id="screenshot-btn" style="margin-left: 10px;">截图保存</button>
+        <select id="layout-select" style="margin-left: 10px; padding: 10px; border: none; border-radius: 8px; background-color: var(--primary-color); color: white; font-size: 14px;">
+            <option value="auto">自动布局</option>
+            <option value="2x2">2x2布局</option>
+            <option value="3x3">3x3布局</option>
+            <option value="4x3">4x3布局</option>
+            <option value="5x2">5x2布局</option>
+        </select>
+    </div>
+
+    <script>
+        // ==================== 代理配置 ====================
+        const PROXY_LIST = [
+            'https://anime-image-proxy.morlvoid17.workers.dev/proxy?url=',
+            'https://imgproxy.pcb.im/api/image-proxy?url='
+        ];
+        // 默认使用
+        let currentProxyIndex = 1;
+        const IMAGE_PROXY = PROXY_LIST[currentProxyIndex];
+        // 将图片地址包装为代理地址
+        function proxyImage(url, proxyIndex = currentProxyIndex) {
+            if (!url) return '';
+            const proxyUrl = PROXY_LIST[proxyIndex];
+            if (url.startsWith(proxyUrl) || url.startsWith('data:')) return url;
+            return proxyUrl + encodeURIComponent(url);
+        }
+        // --- 配置与初始数据 ---
+        const LOCAL_PRESETS = [{
+            title: "进击的巨人",
+            image: "https://lain.bgm.tv/pic/cover/l/f5/66/216839_K777z.jpg"
+        }, {
+            title: "钢之炼金术师 FA",
+            image: "https://lain.bgm.tv/pic/cover/l/c0/81/1482_f6696.jpg"
+        }];
+        // 对本地预设图片进行代理包装
+        LOCAL_PRESETS.forEach(item => {
+            if (item.image) item.image = proxyImage(item.image);
+        });
+        let gridData = JSON.parse(localStorage.getItem('animeGridData')) || {
+            mainTitle: "",
+            cards: Array(9).fill(null).map(() => ({
+                title: "点击选择番剧",
+                image: ""
+            }))
+        };
+        // 全局重试函数
+        window.retryWithNextProxy = function(imgElement) {
+            const originalUrl = imgElement.dataset.original;
+            let retryCount = parseInt(imgElement.dataset.retry || 0);
+            const maxRetries = PROXY_LIST.length;
+
+            if (retryCount < maxRetries) {
+                // 尝试下一个代理
+                const nextProxyIndex = (retryCount + 1) % PROXY_LIST.length;
+                const newSrc = PROXY_LIST[nextProxyIndex] + encodeURIComponent(originalUrl);
+                imgElement.src = newSrc;
+                imgElement.dataset.retry = nextProxyIndex;
+            } else {
+                // 所有代理都失败，显示占位图
+                imgElement.src = 'data:image/svg+xml,%3Csvg ... %3E';
+                imgElement.alt = '加载失败';
+            }
+        };
+        window.retryCardImage = function(cardImage) {
+            const originalUrl = cardImage.dataset.original;
+            let proxyIndex = parseInt(cardImage.dataset.proxyIndex || 0);
+            const maxRetries = PROXY_LIST.length;
+
+            if (proxyIndex < maxRetries - 1) {
+                // 尝试下一个代理
+                const nextIndex = proxyIndex + 1;
+                const newSrc = PROXY_LIST[nextIndex] + encodeURIComponent(originalUrl);
+                cardImage.style.backgroundImage = `url('${newSrc}')`;
+                cardImage.dataset.proxyIndex = nextIndex;
+            } else {
+                // 所有代理失败，显示占位背景
+                cardImage.style.backgroundImage = 'none';
+                cardImage.style.backgroundColor = '#eee';
+                cardImage.innerHTML = '❌';
+            }
+        };
+        // 🔧 迁移老数据：如果卡片中的图片不是代理地址，则包装一次
+        gridData.cards = gridData.cards.map(card => {
+            if (card.image && !card.image.startsWith(IMAGE_PROXY) && !card.image.startsWith('data:')) {
+                card.image = IMAGE_PROXY + encodeURIComponent(card.image);
+            }
+            return card;
+        });
+        const gridContainer = document.getElementById('anime-grid');
+        const mainTitleInput = document.getElementById('main-title-input');
+        const addAnimeBtn = document.getElementById('add-anime-btn');
+        const screenshotBtn = document.getElementById('screenshot-btn');
+        const layoutSelect = document.getElementById('layout-select');
+
+        // --- 初始化渲染 ---
+        function init() {
+            mainTitleInput.value = gridData.mainTitle;
+            renderGrid();
+
+            mainTitleInput.addEventListener('input', function(e) {
+                gridData.mainTitle = e.target.value;
+                save();
+            });
+
+            // 点击外部关闭所有搜索框
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.card')) {
+                    document.querySelectorAll('.search-container').forEach(function(el) {
+                        el.classList.remove('active');
+                    });
+                }
+            });
+
+            // 添加番剧按钮点击事件
+            addAnimeBtn.addEventListener('click', function() {
+                addAnime();
+            });
+
+            // 截图保存按钮点击事件
+            screenshotBtn.addEventListener('click', function() {
+                // 创建一个临时容器，包含标题和网格
+                const tempContainer = document.createElement('div');
+                tempContainer.style.position = 'fixed';
+                tempContainer.style.top = '-9999px';
+                tempContainer.style.left = '-9999px';
+                tempContainer.style.padding = '50px';
+                tempContainer.style.backgroundColor = '#f5f5f5';
+                tempContainer.style.borderRadius = '12px';
+
+                // 创建标题元素
+                const titleElement = document.createElement('h2');
+                titleElement.style.textAlign = 'center';
+                titleElement.style.marginBottom = '30px';
+                titleElement.style.fontSize = '24px';
+                titleElement.style.color = '#333';
+                titleElement.textContent = mainTitleInput.value || '';
+
+                // 克隆网格容器
+                const gridClone = document.querySelector("#anime-grid").cloneNode(true);
+
+                // 将标题和网格添加到临时容器
+                tempContainer.appendChild(titleElement);
+                tempContainer.appendChild(gridClone);
+
+                // 将临时容器添加到文档
+                document.body.appendChild(tempContainer);
+
+                // 执行 html2canvas
+                html2canvas(tempContainer, {
+                    useCORS: true,
+                    proxy: IMAGE_PROXY, // 加上这一行
+                    scale: 2,
+                    backgroundColor: '#f5f5f5'
+                }).then(canvas => {
+                    // 1. 将 canvas 转为 base64 格式的图片地址
+                    const imgData = canvas.toDataURL('image/png');
+
+                    // 2. 创建一个虚拟的 <a> 标签模拟点击下载
+                    const link = document.createElement('a');
+                    link.href = imgData;
+                    link.download = 'my-anime-grid.png'; // 下载的文件名
+                    link.click();
+
+                    // 3. 移除临时容器
+                    document.body.removeChild(tempContainer);
+                });
+            });
+
+            // 布局选择事件
+            layoutSelect.addEventListener('change', function() {
+                updateLayout(this.value);
+            });
+        }
+
+        function renderGrid() {
+            gridContainer.innerHTML = '';
+            gridData.cards.forEach(function(data, index) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.draggable = true;
+                card.setAttribute('data-index', index);
+                card.innerHTML = `
+                    <button class="delete-btn" onclick="event.stopPropagation()">×</button>
+                    <div class="card-image" style="background-image: url('${data.image}')">
+                        ${data.image ? '' : '+'}
+                    </div>
+                    <div class="card-title">${data.title}</div>
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="搜索番剧名..." onclick="event.stopPropagation()">
+                        <div class="results-list"></div>
+                    </div>
+                `;
+
+                // 卡片点击逻辑
+                card.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    // 关闭其他
+                    document.querySelectorAll('.search-container').forEach(function(el) {
+                        el.classList.remove('active');
+                    });
+                    // 开启当前
+                    const searchBox = card.querySelector('.search-container');
+                    searchBox.classList.toggle('active');
+                    searchBox.querySelector('.search-input').focus();
+                });
+
+                // 删除按钮点击事件
+                const deleteBtn = card.querySelector('.delete-btn');
+                deleteBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    deleteAnime(index);
+                });
+
+                // 拖拽排序相关变量
+                let isDragging = false;
+                let startX, startY;
+                let dragIndex;
+                let originalIndex;
+                let startPosition;
+
+                // 长按启动拖拽
+                let longPressTimer;
+                const longPressDelay = 2000; // 长按延迟时间，3秒
+
+                // 鼠标按下/触摸开始
+                function startDrag(e) {
+                    e.stopPropagation();
+                    // 清除之前的计时器
+                    clearTimeout(longPressTimer);
+
+                    // 设置长按计时器
+                    longPressTimer = setTimeout(function() {
+                        isDragging = true;
+                        dragIndex = parseInt(card.getAttribute('data-index'));
+                        originalIndex = dragIndex;
+                        card.classList.add('dragging');
+
+                        // 记录初始位置
+                        if (e.type === 'mousedown') {
+                            startX = e.clientX;
+                            startY = e.clientY;
+                        } else {
+                            startX = e.touches[0].clientX;
+                            startY = e.touches[0].clientY;
+                        }
+
+                        // 记录卡片初始位置
+                        startPosition = card.getBoundingClientRect();
+                    }, longPressDelay);
+                }
+
+                // 鼠标移动/触摸移动
+                function onDrag(e) {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // 获取当前鼠标/触摸位置
+                    let clientX, clientY;
+                    if (e.type === 'mousemove') {
+                        clientX = e.clientX;
+                        clientY = e.clientY;
+                    } else {
+                        clientX = e.touches[0].clientX;
+                        clientY = e.touches[0].clientY;
+                    }
+
+                    // 计算偏移量
+                    const offsetX = clientX - startX;
+                    const offsetY = clientY - startY;
+
+                    // 更新拖拽卡片位置
+                    card.style.position = 'absolute';
+                    card.style.left = (startPosition.left - gridContainer.getBoundingClientRect().left + offsetX) + 'px';
+                    card.style.top = (startPosition.top - gridContainer.getBoundingClientRect().top + offsetY) + 'px';
+                    card.style.zIndex = '1000';
+                    card.style.pointerEvents = 'none'; // 防止拖拽时触发其他事件
+
+                    // 检测碰撞，找到目标卡片
+                    const cards = Array.from(gridContainer.children);
+                    let closestCard = null;
+                    let minDistance = Infinity;
+                    let insertPosition = 'after';
+
+                    // 计算与每个卡片的距离
+                    cards.forEach(function(otherCard, otherIndex) {
+                        if (otherCard !== card) {
+                            const rect = otherCard.getBoundingClientRect();
+                            // 计算卡片中心坐标
+                            const cardCenterX = rect.left + rect.width / 2;
+                            const cardCenterY = rect.top + rect.height / 2;
+
+                            // 计算距离
+                            const distance = Math.sqrt(
+                                Math.pow(clientX - cardCenterX, 2) +
+                                Math.pow(clientY - cardCenterY, 2)
+                            );
+
+                            // 找到最近的卡片
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                closestCard = otherCard;
+                                // 确定插入位置
+                                insertPosition = clientY < cardCenterY ? 'before' : 'after';
+                            }
+                        }
+                    });
+
+                    // 更新DOM结构
+                    if (closestCard) {
+                        // 移除当前卡片
+                        card.parentNode.removeChild(card);
+                        // 插入到正确位置
+                        if (insertPosition === 'before') {
+                            gridContainer.insertBefore(card, closestCard);
+                        } else {
+                            gridContainer.insertBefore(card, closestCard.nextSibling);
+                        }
+                        // 更新索引
+                        updateCardIndices();
+                    }
+                }
+
+                // 鼠标释放/触摸结束
+                function endDrag(e) {
+                    e.stopPropagation();
+                    // 清除长按计时器
+                    clearTimeout(longPressTimer);
+
+                    if (isDragging) {
+                        isDragging = false;
+                        card.classList.remove('dragging');
+
+                        // 重置卡片样式
+                        card.style.position = '';
+                        card.style.left = '';
+                        card.style.top = '';
+                        card.style.zIndex = '';
+                        card.style.pointerEvents = '';
+
+                        // 获取最终位置的索引
+                        const cards = Array.from(gridContainer.children);
+                        const finalIndex = cards.indexOf(card);
+
+                        // 如果位置发生变化，更新数据
+                        if (finalIndex !== originalIndex) {
+                            const draggedCard = gridData.cards.splice(originalIndex, 1)[0];
+                            gridData.cards.splice(finalIndex, 0, draggedCard);
+                            save();
+                        }
+
+                        // 重新渲染网格，恢复正常状态
+                        renderGrid();
+                    }
+                }
+
+                // 更新所有卡片的索引
+                function updateCardIndices() {
+                    const cards = Array.from(gridContainer.children);
+                    cards.forEach(function(card, index) {
+                        card.setAttribute('data-index', index);
+                    });
+                }
+
+                // 添加事件监听器
+                // 鼠标事件
+                card.addEventListener('mousedown', startDrag);
+                document.addEventListener('mousemove', onDrag);
+                document.addEventListener('mouseup', endDrag);
+
+                // 触摸事件（手机端支持）
+                card.addEventListener('touchstart', startDrag, {
+                    passive: false
+                });
+                document.addEventListener('touchmove', onDrag, {
+                    passive: false
+                });
+                document.addEventListener('touchend', endDrag);
+
+                // 阻止默认拖拽行为
+                card.addEventListener('dragstart', function(e) {
+                    e.preventDefault();
+                });
+
+                // 搜索输入逻辑 (防抖)
+                const searchInput = card.querySelector('.search-input');
+                const resultsList = card.querySelector('.results-list');
+                let debounceTimer;
+
+                searchInput.addEventListener('input', function(e) {
+                    clearTimeout(debounceTimer);
+                    const query = e.target.value.trim();
+                    if (!query) {
+                        resultsList.innerHTML = '';
+                        return;
+                    }
+
+                    debounceTimer = setTimeout(function() {
+                        performSearch(query, resultsList, index);
+                    }, 500);
+                });
+
+                gridContainer.appendChild(card);
+            });
+        }
+
+        // --- 核心搜索逻辑 ---
+        function performSearch(query, resultsList, cardIndex) {
+            resultsList.innerHTML = '<div class="loading-text">正在从 AniList & Bangumi 搜索...</div>';
+
+            // 1. 本地模糊匹配
+            const localMatches = LOCAL_PRESETS.filter(function(item) {
+                return item.title.toLowerCase().includes(query.toLowerCase());
+            });
+
+            // 2. AniList API (GraphQL)
+            const aniListQuery = `
+                query ($search: String) {
+                    Page(perPage: 10) {
+                        media(search: $search, type: ANIME) {
+                            title { romaji chinese: english }
+                            coverImage { large }
+                        }
+                    }
+                }
+            `;
+
+            const aniListPromise = fetch('https://graphql.anilist.co', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: aniListQuery,
+                    variables: {
+                        search: query
+                    }
+                })
+            }).then(function(res) {
+                return res.json();
+            }).catch(function() {
+                return null;
+            });
+
+            // 3. Bangumi API (REST)
+            const bgmPromise = fetch(`https://api.bgm.tv/search/subject/${encodeURIComponent(query)}?type=2`)
+                .then(function(res) {
+                    return res.json();
+                }).catch(function() {
+                    return null;
+                });
+
+            // 等待所有结果
+            Promise.all([aniListPromise, bgmPromise]).then(function([aniRes, bgmRes]) {
+                // 4. 合并并去重
+                let combined = localMatches.slice();
+
+                if (aniRes && aniRes.data && aniRes.data.Page && aniRes.data.Page.media) {
+                    aniRes.data.Page.media.forEach(function(m) {
+                        combined.push({
+                            title: m.title.romaji || m.title.chinese,
+                            image: m.coverImage.large
+                        });
+                    });
+                }
+
+                if (bgmRes && bgmRes.list) {
+                    bgmRes.list.slice(0, 10).forEach(function(m) {
+                        combined.push({
+                            title: m.name_cn || m.name,
+                            image: m.images && m.images.large ? m.images.large : ""
+                        });
+                    });
+                }
+
+                // 去重
+                const uniqueResults = combined.filter(function(v, i, a) {
+                    return a.findIndex(function(t) {
+                        return t.title === v.title;
+                    }) === i;
+                });
+
+                // 5. 渲染列表
+                renderResults(uniqueResults, resultsList, cardIndex);
+
+            }).catch(function(error) {
+                resultsList.innerHTML = '<div class="loading-text">搜索失败，请重试</div>';
+            });
+        }
+
+        function renderResults(results, container, cardIndex) {
+            container.innerHTML = '';
+            if (results.length === 0) {
+                container.innerHTML = '<div class="loading-text">未找到结果</div>';
+                return;
+            }
+
+            results.forEach(function(item) {
+                const li = document.createElement('li');
+                li.className = 'result-item';
+                const imgUrl = proxyImage(item.image);
+                li.innerHTML = `
+            <img src="${imgUrl}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'56\' viewBox=\'0 0 40 56\'%3E%3Crect width=\'40\' height=\'56\' fill=\'%23ddd\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\' fill=\'%23999\' font-size=\'10\'%3E无图%3C/text%3E%3C/svg%3E'">
+            <span>${item.title}</span>
+        `;
+                li.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    selectAnime(cardIndex, item);
+                });
+                container.appendChild(li);
+            });
+            results.forEach(function(item) {
+                const li = document.createElement('li');
+                li.className = 'result-item';
+                // 先使用当前默认代理生成图片URL
+                const imgUrl = proxyImage(item.image);
+                li.innerHTML = `
+            <img src="${imgUrl}" 
+                 data-original="${item.image}"
+                 data-retry="0"
+                 onerror="retryWithNextProxy(this)"
+                 onload="this.style.display='block'">
+            <span>${item.title}</span>
+        `;
+                li.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    selectAnime(cardIndex, item);
+                });
+                container.appendChild(li);
+            });
+        }
+
+        // --- 选择与保存 ---
+        function selectAnime(index, item) {
+            // 保存时同时保存原始地址和当前使用的代理索引（默认为0）
+            const proxyIndex = currentProxyIndex;
+            const proxiedImage = proxyImage(item.image, proxyIndex);
+            gridData.cards[index] = {
+                title: item.title,
+                image: proxiedImage,
+                originalImage: item.image, // 新增：保存原始地址
+                proxyIndex: proxyIndex // 新增：保存使用的代理索引
+            };
+            save();
+
+            const card = gridContainer.children[index];
+            if (card) {
+                const cardImage = card.querySelector('.card-image');
+                const cardTitle = card.querySelector('.card-title');
+
+                // 更新背景图，并添加 data-* 属性以便重试
+                cardImage.style.backgroundImage = `url('${proxiedImage}')`;
+                cardImage.dataset.original = item.image;
+                cardImage.dataset.proxyIndex = proxyIndex;
+                cardImage.onerror = function() {
+                    retryCardImage(this);
+                };
+
+                cardImage.innerHTML = proxiedImage ? '' : '+';
+                cardTitle.textContent = item.title;
+
+                const searchBox = card.querySelector('.search-container');
+                searchBox.classList.remove('active');
+            }
+        }
+
+        // --- 添加番剧功能 ---
+        function addAnime() {
+            // 向cards数组添加一个新的卡片对象
+            gridData.cards.push({
+                title: "点击选择番剧",
+                image: ""
+            });
+            // 保存数据
+            save();
+            // 重新渲染网格
+            renderGrid();
+        }
+
+        // --- 布局更新功能 ---
+        function updateLayout(layoutType) {
+            if (layoutType === 'auto') {
+                // 移除内联样式，使用CSS中的响应式布局
+                gridContainer.style.gridTemplateColumns = '';
+                gridContainer.style.gap = '';
+            } else if (layoutType === '3x3') {
+                // 强制使用3x3布局
+                gridContainer.style.gridTemplateColumns = 'repeat(3, 1fr)';
+                gridContainer.style.gap = '20px';
+            } else if (layoutType === '2x2') {
+                // 强制使用2x2布局
+                gridContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
+                gridContainer.style.gap = '20px';
+            } else if (layoutType === '4x3') {
+                // 强制使用4x3布局
+                gridContainer.style.gridTemplateColumns = 'repeat(4, 1fr)';
+                gridContainer.style.gap = '15px';
+            } else if (layoutType === '5x2') {
+                // 强制使用5x2布局
+                gridContainer.style.gridTemplateColumns = 'repeat(5, 1fr)';
+                gridContainer.style.gap = '10px';
+            }
+        }
+
+        // --- 删除番剧功能 ---
+        function deleteAnime(index) {
+            // 确保至少保留一个卡片
+            if (gridData.cards.length > 1) {
+                // 从cards数组中删除指定索引的卡片
+                gridData.cards.splice(index, 1);
+                // 保存数据
+                save();
+                // 重新渲染网格
+                renderGrid();
+            }
+        }
+
+        function save() {
+            localStorage.setItem('animeGridData', JSON.stringify(gridData));
+        }
+
+        // 启动
+        init();
+    </script>
+
+    <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #666; padding-bottom: 20px;">
+        番剧推荐表 制作：Morlvoid/fulie （本表为本地储存，不收集任何用户信息）
+    </div>
+</body>
+
+</html>
