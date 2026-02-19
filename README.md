@@ -1,8 +1,16 @@
 # 你好请吃我的番剧安利-番剧收集器
+[![在线演示](https://img.shields.io/badge/在线演示-点击体验-blue)](http://acg-anime.morlvoid.pro)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![HTML](https://img.shields.io/badge/语言-HTML/CSS/JS-orange)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
 
 ## 项目简介
 
 你好请吃我的番剧安利-番剧收集器是一个基于网页的番剧推荐表生成工具，用户可以通过搜索和选择番剧，创建自己的番剧推荐九宫格或更多格子的推荐表。
+
+<img width="800" height="600" alt="番剧安利" src="https://github.com/user-attachments/assets/f57ac085-c890-4c36-b5a3-43f7ff356ccf" />
+
 
 ## 项目功能
 
@@ -15,6 +23,9 @@
 7. **截图保存**：使用html2canvas库实现截图功能，可将番剧推荐表保存为图片
 8. **本地存储**：使用localStorage保存数据，刷新页面后数据不丢失
 9. **响应式设计**：适配不同屏幕尺寸，在手机端也能良好显示
+
+## 搜索数据源
+目前集成了 AniList 和 Bangumi，如需添加其他源，可修改 performSearch 函数。
 
 ## 技术栈
 
@@ -43,12 +54,14 @@
 1. 克隆项目到本地
 2. 直接打开`index.html`文件即可使用
 
-
 ## 版权信息
 
-制作：Morlvoid / fulie
+制作：Morlvoid / fulie <br>
+本项目由 [Morlvoid](https://github.com/Morlvoid) 和 [fulie](https://github.com/bili-fule) 共同完成，纯本地工具，不收集任何用户信息，放心使用。如果你喜欢，欢迎 Star ⭐ 或转发给更多同好。
 
 ## 许可证
-
-
 MIT License
+
+## 贡献
+欢迎提交 Issue 或 Pull Request。如果你想添加新功能或修复 bug，请先开 Issue 讨论。
+
